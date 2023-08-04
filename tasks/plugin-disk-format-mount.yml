@@ -1,0 +1,88 @@
+- name: Mount disks in Linux
+  block:
+  - name: Get all block devices
+    shell: lsblk -lp -o NAME,TYPE,FSTYPE -dn | awk '{ print "{\"file_system\":\""$3"\",\"name\":\""$1"\", \"type\":\""$2"\"}" }'
+    register: block_devices_output
+
+  - name: Output all block devices
+    set_fact:
+      block_devices: "{{ block_devices|default([]) + [ item | from_json ] }}"
+    loop: "{{ block_devices_output.stdout_lines }}"
+
+  - name: Get block devices with file system
+    shell: lsblk -lp -o NAME,FSTYPE -n | awk '$2!="" { print $1 }'
+    register: block_devices_with_file_system_output
+
+  - name: Output block devices with file system
+    set_fact:
+      block_devices_with_file_system: "{{ block_devices_with_file_system|default([]) + [ item ] }}"
+    loop: "{{ block_devices_with_file_system_output.stdout_lines }}"
+
+  - name: Get disks
+    shell: lsblk -lp -o NAME,TYPE -n | awk '$2=="disk" { print $1 }'
+    register: disks_output
+
+  - name: Output disks
+    set_fact:
+      disks: "{{ disks|default([]) + [ item ] }}"
+    with_items: "{{ disks_output.stdout_lines }}"
+    when: '"zram" not in item'
+
+  - name: Partition disk
+    parted:
+      device: "{{ item }}"
+      number: 1
+      state: present
+      label: gpt
+    when: (block_devices_with_file_system | join('|')) is not search(item)
+    with_items: "{{ disks }}"
+
+  - name: Format disk
+    filesystem:
+      fstype: xfs
+      dev: "{{ item }}1"
+    when: (block_devices_with_file_system | join('|')) is not search(item) and item is not search("nvme")
+    with_items: "{{ disks }}"
+
+  - name: Format nvme disk
+    filesystem:
+      fstype: xfs
+      dev: "{{ item }}p1"
+    when: (block_devices_with_file_system | join('|')) is not search(item) and item is search("nvme")
+    with_items: "{{ disks }}"
+
+  - name: Get mount info
+    shell: mount
+    register: mount_output
+
+  - name: Output mount info
+    set_fact:
+      mount_info: "{{ mount_info|default([]) + [ item ] }}"
+    loop: "{{ mount_output.stdout_lines }}"
+
+  - name: Get valid block devices for mount
+    shell: lsblk -lp -o NAME,FSTYPE,TYPE,UUID -n | awk '($2!=""  && (($3=="disk" && ($2!="vfat" && $2!="swap")) || ($3=="part" && $2!="swap"))) { print "{\"file_system\":\""$2"\",\"name\":\""$1"\",\"uuid\":\""$4"\"}" }'
+    register: valid_block_devices_for_mount_output
+
+  - name: Output valid block devices for mount
+    set_fact:
+      valid_block_devices_for_mount: "{{ valid_block_devices_for_mount|default([]) + [ item | from_json ] }}"
+    loop: "{{ valid_block_devices_for_mount_output.stdout_lines }}"
+
+  - name: Mount disks or parts
+    mount:
+      fstype: "{{ item.1.file_system }}"
+      src: UUID="{{ item.1.uuid }}"
+      path: "/data/volume_{{ item.0 }}"
+      state: mounted
+    when: (mount_info|join('|')) is not search(item.1.name)
+    with_indexed_items: "{{ valid_block_devices_for_mount }}"
+
+  - name: Change permissions
+    file:
+      path: "/data/volume_{{ item.0 }}"
+      mode: 0777
+      recurse: no
+      state: directory
+    when: (mount_info|join('|')) is not search(item.1.name)
+    with_indexed_items: "{{ valid_block_devices_for_mount }}"

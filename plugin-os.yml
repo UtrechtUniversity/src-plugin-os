@@ -1,0 +1,17 @@
+- name: OS Plugin
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Wait for system to become reachable
+      wait_for_connection:
+        timeout: 300
+    - name: Gather facts for first time
+      setup:
+    - name: Linux Setup
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+      include: tasks/plugin-os-linux.yml
+    - name: Disk format mount
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'Fedora') and os_disk_format is defined and (os_disk_format | bool)
+      include: tasks/plugin-disk-format-mount.yml
+      

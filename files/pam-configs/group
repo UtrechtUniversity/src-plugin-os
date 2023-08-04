@@ -1,0 +1,6 @@
+Name: Add users to groups
+Default: yes
+Priority: 128
+Auth-Type: Additional
+Auth:
+  optional    pam_group.so use_first_pass

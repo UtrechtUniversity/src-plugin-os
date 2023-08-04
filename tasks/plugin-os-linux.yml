@@ -1,0 +1,275 @@
+- name: CentOS or Fedora
+  when: ansible_os_family == "RedHat"
+  block:
+  - name: Install epel-release
+    package:
+      name:
+        - epel-release
+      state: present
+    when: ansible_distribution == 'CentOS'
+
+  - name: Install required packages (1)
+    package:
+      name:
+        - python3-libselinux
+        - python3
+        - python3-setuptools
+        - python3-pip
+        - jq
+        - curl
+        - ntfs-3g
+        - cronie
+        - oddjob
+        - oddjob-mkhomedir
+
+  - name: Set yubikey flag on and keep it persistent across reboots
+    seboolean:
+      name: authlogin_yubikey
+      state: yes
+      persistent: yes
+
+  - name: Update pam to enable enablemkhomedir CentOS
+    command: authconfig --enablemkhomedir --update
+    when:  ansible_distribution == 'CentOS'
+
+  - name: Update pam to enable enablemkhomedir Fedora
+    command: authselect enable-feature with-mkhomedir
+    when:  ansible_distribution == 'Fedora'
+
+  - name: Update pam to use pam_group
+    lineinfile:
+      path: "{{ item }}"
+      line: 'auth required pam_group.so use_first_pass'
+      regex: 'auth required pam_group.so use_first_pass'
+      insertafter: BOF
+    with_items:
+        - /etc/pam.d/password-auth
+        - /etc/pam.d/system-auth
+
+  - name: Install fail2ban on CentOS or Fedora
+    package:
+      name: fail2ban
+      # state: latest
+
+  - name: Create config file fail2ban on CentOS 
+    copy:
+      src: fail2ban-centos
+      dest: /etc/fail2ban/jail.local
+      mode: 0644
+    when: ansible_distribution == 'CentOS' 
+
+
+  - name: Create config file fail2ban on Fedora
+    copy:
+      src: fail2ban-fedora
+      dest: /etc/fail2ban/jail.local
+      mode: 0644
+    when: ansible_distribution == 'Fedora'  
+
+  - name: Start fail2ban on CentOS or Fedora
+    service:
+      name: fail2ban
+      state: started
+      enabled: yes
+
+  - name: Mask systemctl power commands
+    systemd:
+      name: "{{ item }}"
+      masked: yes
+    with_items:
+      - sleep.target
+      - suspend-then-hibernate.target
+      - suspend.target
+      - halt.target
+      - hibernate.target
+      - hybrid-sleep.target
+      - poweroff.target
+
+  - name: Add aliases to notify users
+    blockinfile:
+      path: /etc/bashrc
+      block: |
+        alias sudo='sudo '
+        alias poweroff='echo "poweroff: Command disabled by Research Cloud Administration"'
+        alias halt='echo "halt: Command disabled by Research Cloud Administration"'
+        alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
+        alias python=python3
+
+  - name: Switch off local firewall (open by default on Ubuntu)
+    systemd:
+      name: firewalld
+      state: stopped
+      enabled: false
+    
+  - name: Start Cron service
+    service:
+      name: crond
+      state: started
+      enabled: yes
+
+
+- name: Ubuntu
+  when: ansible_os_family == 'Debian'
+  block:
+
+  - name: Wait for APT Lock 1
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for APT Lock-frontend 1
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for /var/lib/apt/lists/lock 1
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for APT /var/cache/apt/archives/lock 1
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Update apt repo and cache
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+  - name: Wait for APT Lock
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for APT Lock-frontend
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for /var/lib/apt/lists/lock
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Wait for APT /var/cache/apt/archives/lock
+    shell:  x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+
+  - name: Install required packages (3)
+    package:
+      name:
+        - apt-transport-https
+        - python3
+        - python3-setuptools
+        - python3-pip
+        - jq
+        - curl
+        - ntfs-3g
+      state: present
+
+  - name: Create pam entry for mkhomedir
+    register: pam_mkhomedir
+    copy:
+      src: pam-configs/mkhomedir
+      dest: /usr/share/pam-configs/mkhomedir
+      mode: 0644
+
+  - name: Update pam when pam_mkhomedir is changed
+    when: pam_mkhomedir is changed
+    command: pam-auth-update {{ item }}
+    with_items:
+      - --remove mkhomedir
+      - --package mkhomedir
+
+  - name: Create pam entry for group membership
+    register: pam_group
+    copy:
+      src: pam-configs/group
+      dest: /usr/share/pam-configs/group
+      mode: 0644
+
+  - name: Update pam when pam_group is changes
+    when: pam_group is changed
+    command: pam-auth-update --package group
+
+  - name: Mask systemctl power commands
+    systemd:
+      name: "{{ item }}"
+      masked: yes
+    with_items:
+      - sleep.target
+      - suspend-then-hibernate.target
+      - suspend.target
+      - halt.target
+      - hibernate.target
+      - hybrid-sleep.target
+      - poweroff.target
+
+  - name: Add aliases to notify users
+    blockinfile:
+      path: /etc/bash.bashrc
+      block: |
+        alias sudo='sudo '
+        alias poweroff='echo "poweroff: Command disabled by Research Cloud Administration"'
+        alias halt='echo "halt: Command disabled by Research Cloud Administration"'
+        alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
+        alias python=python3
+
+- name: Ensure 'wheel' group exists
+  group:
+    name: wheel
+    state: present
+
+- name: Ensure 'wheel' group has sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) ALL'
+    validate: visudo -cf %s
+
+- name: Create data and dataset dir
+  file:
+    path: /data/datasets
+    state: directory
+    recurse: yes
+
+- name: Create symlink to data dir in skel
+  file:
+    src: /data
+    dest: /etc/skel/data
+    state: link
+
+- name: Create temporary scratch dir
+  file:
+    path: /scratch
+    mode: 0777
+    state: directory
+    recurse: yes
+
+- name: Create symlink to scratch dir in skel
+  file:
+    src: /scratch
+    dest: /etc/skel/scratch
+    state: link
+
+- name: Create .ssh folder in skel
+  file:
+    path: /etc/skel/.ssh
+    mode: 0700
+    state: directory
+
+- name: Fix securetty
+  lineinfile:
+    path: /etc/pam.d/login
+    regexp: 'auth (.*) pam_securetty.so'
+    line: auth optional    pam_securetty.so
+
+- name: Install fail2ban on Ubuntu
+  apt:
+    name: fail2ban
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Create config file fail2ban on Ubuntu
+  copy:
+    src: fail2ban-ubuntu
+    dest: /etc/fail2ban/jail.local
+    mode: 0644
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Add /etc/hosts entry
+  lineinfile:
+    dest: /etc/hosts
+    line: '{{ rsc_os_ip }}  {{ rsc_os_fqdn }}'
+    insertafter: EOF
+    create: True
+
+- name: Set /etc/hostname
+  copy:
+    content: "{{ rsc_os_fqdn + '\n' }}"
+    dest: /etc/hostname
+    
