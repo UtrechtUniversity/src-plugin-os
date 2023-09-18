@@ -295,6 +295,7 @@
   when: ansible_distribution == 'Ubuntu'
 
 - name: Add /etc/hosts entry
+  tags: [ 'skip_on_container' ]
   lineinfile:
     dest: /etc/hosts
     line: '{{ rsc_os_ip }}  {{ rsc_os_fqdn }}'
@@ -302,6 +303,7 @@
     create: True
 
 - name: Set /etc/hostname
+  tags: [ 'skip_on_container' ]
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
