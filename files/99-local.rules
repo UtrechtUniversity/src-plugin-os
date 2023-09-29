@@ -1,0 +1,1 @@
+ACTION=="add", KERNEL=="sd*|vd*", ENV{DEVTYPE}=="disk", RUN+="/opt/get_disk.sh %k %E{ID_SERIAL}"
