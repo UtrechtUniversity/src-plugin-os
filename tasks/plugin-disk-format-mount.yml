@@ -1,5 +1,16 @@
 - name: Mount disks in Linux
   block:
+  - name: Put CO config
+    copy:
+      dest: /etc/rsc/storage.json
+      mode: 0600
+      content: |
+        {
+          "workspace_id": "{{ workspace_id }}",
+          "storage_api_endpoint": "{{ storage_api_endpoint }}",
+          "co_token": "{{ co_token }}",
+        }
+
   - name: Copy get_disk.sh to /opt
     copy:
       src: get_disk.sh
