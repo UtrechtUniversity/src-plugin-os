@@ -1,5 +1,12 @@
 - name: Mount disks in Linux
   block:
+  - name: Create rsc dir
+    file:
+      path: /etc/rsc
+      recurse: yes
+      state: directory
+      mode: 0700
+
   - name: Put CO config
     copy:
       dest: /etc/rsc/storage.json
