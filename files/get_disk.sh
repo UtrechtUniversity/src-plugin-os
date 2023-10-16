@@ -12,7 +12,7 @@ if [ ! -f "$storage_config" ]; then
 fi
 
 # Read storage data from JSON file
-workspace_data=$(cat "$sorage_config")
+workspace_data=$(cat "$storage_config")
 
 # Parse storage data to get required values
 co_token=$(echo "$workspace_data" | jq -r '.co_token')
