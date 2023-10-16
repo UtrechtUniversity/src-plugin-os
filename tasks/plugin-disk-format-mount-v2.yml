@@ -1,0 +1,67 @@
+- name: Mount disks in Linux
+  block:
+  - name: Create rsc dir
+    file:
+      path: /etc/rsc
+      recurse: yes
+      state: directory
+      mode: 0700
+
+  - name: Put storage config
+    copy:
+      dest: /etc/rsc/storage.json
+      mode: 0600
+      content: |
+        {
+          "workspace_id": "{{ workspace_id }}",
+          "storage_api_endpoint": "{{ storage_api_endpoint }}",
+          "co_token": "{{ co_token }}",
+        }
+
+  - name: Copy get_disk.sh to /opt
+    copy:
+      src: get_disk.sh
+      dest: /opt/get_disk.sh
+      mode: '0755'
+
+  - name: Copy format_disks.sh to /opt
+    copy:
+      src: format_disks.sh
+      dest: /opt/format_disks.sh
+      mode: '0755'
+
+  - name: Copy mount_disks.sh to /opt
+    copy:
+      src: mount_disks.sh
+      dest: /opt/mount_disks.sh
+      mode: '0755'
+
+  - name: Copy 99-local.rules to the udev directory
+    copy:
+      src: 99-local.rules
+      dest: /etc/udev/rules.d/99-local.rules
+      mode: '0644'
+
+  - name: Remove IPAddressDeny=any # and PrivateMounts=yes
+    lineinfile:
+      path: /lib/systemd/system/udev.service
+      state: absent
+      regexp: '^IPAddressDeny=any'
+      #regexp: '^IPAddressDeny=any|^PrivateMounts=yes'
+
+  # - name: Insert PrivateMounts=no
+  #   lineinfile:
+  #     path: /lib/systemd/system/udev.service
+  #     line: 'PrivateMounts=no'
+  
+  - name: Reload udev.service
+    systemd:
+      name: udev
+      state: restarted
+      daemon_reload: true
+ 
+  - name: Reload udev rules
+    command: udevadm control --reload-rules
+
+  - name: Trigger udevadm
+    command: bash -c 'udevadm trigger --action="add" --subsystem-match="block" /sys/block/vd[b-z]'

@@ -1,1 +1,2 @@
 ACTION=="add", KERNEL=="sd*|vd*", ENV{DEVTYPE}=="disk", RUN+="/opt/get_disk.sh %k %E{ID_SERIAL}"
+ACTION=="add", KERNEL=="vd[b-z][0-9]", ENV{DEVTYPE}=="partition", RUN+="/opt/mount_disks.sh %k %E{ID_PART_ENTRY_NAME} >> /var/log/disk_mounting.log 2>&1"
