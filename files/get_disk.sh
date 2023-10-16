@@ -33,6 +33,12 @@ while [ $retry_count -lt $max_retries ]; do
             key=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
             value=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
             echo "$key $value" >> "$log_file" 2>&1
+            if [ "$serial" = "$value" ]; then
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Disk ID matches: $key $device_path $serial" >> "$log_file" 2>&1
+                /opt/format_disks.sh "$key" "$device_path" >> "$log_file" 2>&1
+              # else
+              #   echo "Serial number does not match: $serial" >> "$log_file" 2>&1
+              fi
         done
         break  # Exit the loop if key and value were found
     else
@@ -53,9 +59,3 @@ fi
 #   value=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
 #   echo "$key $value" >> "$log_file" 2>&1
 
-if [ "$serial" = "$value" ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Disk ID matches: $key $device_path $serial" >> "$log_file" 2>&1
-    /opt/format_disks.sh "$key" "$device_path" >> "$log_file" 2>&1
-  # else
-  #   echo "Serial number does not match: $serial" >> "$log_file" 2>&1
-  fi
