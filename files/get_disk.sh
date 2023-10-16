@@ -59,4 +59,3 @@ if [ "$serial" = "$value" ]; then
   # else
   #   echo "Serial number does not match: $serial" >> "$log_file" 2>&1
   fi
-done
