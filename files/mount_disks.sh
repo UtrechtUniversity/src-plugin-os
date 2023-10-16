@@ -61,6 +61,12 @@ fi
                 if [ -n "$partition_uuid" ]; then
                     # to enable growfs, add x-systemd.growfs to fstab line and do not create a partition on the disk during formatting.
                     echo "UUID=$partition_uuid $data_directory xfs defaults,x-systemd.device-timeout=9s,x-systemd.mount 0 0" >> /etc/fstab
+                   
+                    # as a temporary solution to overcome the auto unmounting after mounting issue
+                    systemctl daemon-reload
+                    #systemctl reset-failed
+                    systemctl start $data_directory
+
                     #echo "UUID=$partition_uuid $data_directory xfs defaults,noauto,x-systemd.device-timeout=9s,x-systemd.automount 0 0" >> /etc/fstab
                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Mounting complete for directory: $data_directory"
                     chmod 777 $data_directory
