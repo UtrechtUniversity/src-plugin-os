@@ -40,8 +40,6 @@ else
 
             xfs_admin -L "$directory_name" "$device_path"1
             echo "$(date '+%Y-%m-%d %H:%M:%S') - XFS label added for device $device_path"
-            
-            sleep 5;
             # partprobe "$device_path"
         fi
     fi

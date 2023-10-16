@@ -54,6 +54,7 @@
   #     path: /lib/systemd/system/udev.service
   #     line: 'PrivateMounts=no'
   
+  # Restart udev service and systemctl daemon reload.
   - name: Reload udev.service
     systemd:
       name: udev

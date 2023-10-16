@@ -1,4 +1,6 @@
 #!/bin/bash
+exec &>> /var/log/disk_mounting.log
+
 device=$1
 device_path=/dev/$1
 log_file="/var/log/disk_mounting.log"
@@ -25,7 +27,7 @@ max_retries=10
 retry_delay=5
 
 while [ $retry_count -lt $max_retries ]; do
-    curl_output=$(curl "$storage_api_endpoint/$workspace_id/" -H "authorization: $co_token" -H "content-type: application/json")
+    curl_output=$(curl -s "$storage_api_endpoint/$workspace_id/" -H "authorization: $co_token" -H "content-type: application/json")
 
     # Check if the response contains key and value
     if jq -e '.meta.storages | length > 0' <<< "$curl_output" >/dev/null; then
@@ -51,11 +53,3 @@ done
 if [ $retry_count -eq $max_retries ]; then
     echo "Maximum retries exceeded. Key and value not found."
 fi
-
-# curl "$storage_api_endpoint/$workspace_id/" \
-#   -H "authorization: $co_token" -H "content-type: application/json" |
-#   jq -c ".meta.storages" | jq -c '.[]' | while IFS= read -r storage; do
-#   key=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
-#   value=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
-#   echo "$key $value" >> "$log_file" 2>&1
-
