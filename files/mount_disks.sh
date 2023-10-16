@@ -35,6 +35,7 @@ else
                     echo "UUID=$partition_uuid $data_directory xfs defaults,x-systemd.device-timeout=9s,x-systemd.mount 0 0" >> /etc/fstab
                     #echo "UUID=$partition_uuid $data_directory xfs defaults,noauto,x-systemd.device-timeout=9s,x-systemd.automount 0 0" >> /etc/fstab
                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Mounting complete for directory: $data_directory"
+                    chmod 777 $data_directory
                 else
                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Error: Failed to retrieve partition UUID."
                 fi

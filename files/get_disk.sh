@@ -2,7 +2,7 @@
 device=$1
 device_path=/dev/$1
 log_file="/var/log/disk_mounting.log"
-sorage_config="/etc/rsc/storage.json"
+storage_config="/etc/rsc/storage.json"
 serial=$(cat /sys/block/$device/serial)
 
 # Check if the storage configuration file exists
