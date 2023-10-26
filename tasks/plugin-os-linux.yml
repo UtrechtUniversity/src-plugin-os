@@ -1,6 +1,11 @@
+- name: Set timezone
+  timezone:
+    name: Europe/Amsterdam
+
 - name: CentOS or Fedora
   when: ansible_os_family == "RedHat"
   block:
+
   - name: Install epel-release
     package:
       name:
@@ -198,6 +203,13 @@
         alias halt='echo "halt: Command disabled by Research Cloud Administration"'
         alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
         alias python=python3
+
+  - name: Restart cron (Debian name of service), to pick up new timezone
+    ansible.builtin.systemd:
+      name: cron
+      daemon_reload: true
+      state: restarted
+
 
 - name: Ensure 'wheel' group exists
   group:
