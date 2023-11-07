@@ -60,10 +60,12 @@
       name: udev
       state: restarted
       daemon_reload: true
- 
+
   - name: Reload udev rules
     command: udevadm control --reload-rules
 
-  - name: Trigger udevadm
-    command: bash -c 'udevadm trigger --action="add" --subsystem-match="block" /sys/block/vd[b-z]'
-
+  # - name: Trigger udevadm
+  #   command: bash -c 'udevadm trigger --action="add" --subsystem-match="block" /sys/block/vd[b-z]'
+  
+  - name: reboot the machine
+  ansible.builtin.reboot:

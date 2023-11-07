@@ -34,6 +34,11 @@ while [ $retry_count -lt $max_retries ]; do
         jq -c '.meta.storages | .[]' <<< "$curl_output" | while IFS= read -r storage; do
             key=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
             value=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
+            if [ "$key" = "null" ] || [ "$value" = "null" ]; then
+                echo "Key or value is 'null'. Retrying..."
+                sleep 1;
+                continue
+            fi
             echo "$key $value" >> "$log_file" 2>&1
             if [ "$serial" = "$value" ]; then
                 echo "$(date '+%Y-%m-%d %H:%M:%S') - Disk ID matches: $key $device_path $serial" >> "$log_file" 2>&1
@@ -51,5 +56,5 @@ while [ $retry_count -lt $max_retries ]; do
 done
 
 if [ $retry_count -eq $max_retries ]; then
-    echo "Maximum retries exceeded. Key and value not found."
+    echo "Maximum retries exceeded. Disk ID match not found."
 fi
