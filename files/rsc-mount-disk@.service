@@ -1,0 +1,7 @@
+[Unit]
+Description=Mount/Unmount Research Cloud Disk on %i
+
+[Service]
+Type=forking
+GuessMainPID=no
+ExecStart=/opt/rsc-utilities/automount_rsc_disk.sh %I

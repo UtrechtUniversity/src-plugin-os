@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # Ensure that the script is called with the correct number of arguments
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 directory_name device_path"
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 device_path"
     exit 1
 fi
 
 # Extract arguments
-directory_name="$1"
-device_path="$2"
-partition="$2"1
+device="$1"
+device_path="/dev/$1"
+directory_name="$(/opt/rsc-utilities/get_disk.sh $device)"
+#partition="$2"1
 data_directory="/data/$directory_name"
 
 
