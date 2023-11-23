@@ -209,6 +209,7 @@
       name: cron
       daemon_reload: true
       state: restarted
+    tags: [ 'skip_on_container' ]
 
 
 - name: Ensure 'wheel' group exists
