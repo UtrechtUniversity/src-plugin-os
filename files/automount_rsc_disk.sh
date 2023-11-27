@@ -16,7 +16,7 @@ DEVBASE=$1
 DEVICE="/dev/${DEVBASE}"
 
 # See if this drive is already mounted, and if so where
-MOUNT_POINT=$(/bin/mount | /bin/grep ${DEVICE} | /usr/bin/awk '{ print $3 }')
+MOUNT_POINT=$(/bin/mount | /bin/grep -w ${DEVICE} | /usr/bin/awk '{ print $3 }')
 
 do_mount()
 {
@@ -65,26 +65,15 @@ do_unmount()
         echo "Warning: ${DEVICE} is not mounted"
     else
         /bin/umount -l ${DEVICE}
+        ESCAPED_MOUNT_POINT=$(echo "$MOUNT_POINT" | sed 's/\//\\\//g')
+        sed -i "/$ESCAPED_MOUNT_POINT/d" /etc/fstab
         echo "Unmounted ${DEVICE}"
     fi
-
-    # Delete all empty dirs in /media that aren't being used as mount
-    # points. This is kind of overkill, but if the drive was unmounted
-    # prior to removal we no longer know its mount point, and we don't
-    # want to leave it orphaned...
-    # for f in /data/* ; do
-    #     if [[ -n $(/usr/bin/find "$f" -maxdepth 0 -type d -empty) ]]; then
-    #         if ! /bin/grep -q " $f " /etc/mtab; then
-    #             echo "**** Removing mount point $f"
-    #             /bin/rmdir "$f"
-    #         fi
-    #     fi
-    # done
 }
 
 if ! [ -b $DEVICE ]
 then
-    if grep /etc/mtab -qe "^$DEVICE"
+    if grep /etc/mtab -wqe "^$DEVICE"
     then
         echo "$DEVICE device removed, umounting..."
         ACTION="remove"
