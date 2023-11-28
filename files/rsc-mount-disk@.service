@@ -5,4 +5,4 @@ Description=Mount/Unmount Research Cloud Disk on %i
 StartLimitBurst=10
 Type=forking
 GuessMainPID=no
-ExecStart=bash -x /opt/rsc-utilities/automount_rsc_disk.sh %I
+ExecStart=/opt/rsc-utilities/automount_rsc_disk.sh %I
