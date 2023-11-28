@@ -1,5 +1,6 @@
 [Unit]
 Description=Formats Research Cloud Disk on %i
+OnSuccess=rsc-mount-disk@%i1.service
 
 [Service]
 Type=forking
