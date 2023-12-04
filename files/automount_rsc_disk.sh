@@ -18,6 +18,10 @@ DEVICE="/dev/${DEVBASE}"
 # See if this drive is already mounted, and if so where
 MOUNT_POINT=$(/bin/mount | /bin/grep -w ${DEVICE} | /usr/bin/awk '{ print $3 }')
 echo "Device is mounted at $MOUNT_POINT"
+mkdir -p /data/volume_by_index/
+mkdir -p /data/volume_by_name/
+chmod 777 /data/volume_by_index/
+chmod 777 /data/volume_by_name/
 
 do_mount()
 {
@@ -45,16 +49,16 @@ do_mount()
         if [[ "${ID_FS_PARTLABEL}" ]]; then
              LABEL=${ID_FS_PARTLABEL}
         fi
-    elif /bin/grep -q " /data/${LABEL} " /etc/mtab; then
+    elif /bin/grep -q " /data/volume_by_name/${LABEL} " /etc/mtab; then
         # Already in use, make a unique one
         LABEL+="-${DEVBASE}"
     fi
     
-    MOUNT_POINT="/data/${LABEL}"
+    MOUNT_POINT="/data/volume_by_name/${LABEL}"
     
-    # Check if MOUNT_POINT is "/data/"
-    if [ "$MOUNT_POINT" = "/data/" ]; then
-        echo "Mount point is /data/. Exiting the script."
+    # Check if MOUNT_POINT is "/data/volume_by_name/"
+    if [ "$MOUNT_POINT" = "/data/volume_by_name/" ]; then
+        echo "Mount point is /data/volume_by_name/. Exiting the script."
         exit 1
     fi
 
@@ -94,6 +98,14 @@ do_mount()
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry $data_directory already exists in /etc/fstab"
         else
             echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail 0 0" >> /etc/fstab
+        fi
+        existing_link=$(find /data/volume_by_index/ -type l -exec readlink {} \; | grep "$MOUNT_POINT")
+        if [ -z "$existing_link" ]; then
+            volume_number=$(ls -l /data/volume_by_index/ | grep -c '^l')  # Count existing symlinks
+            ln -s "$MOUNT_POINT" "/data/volume_by_index/volume_$((volume_number + 1))"
+        else
+            # Symlink already exists
+            echo "Symlink already exists pointing to $MOUNT_POINT: $existing_link"
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
     else
