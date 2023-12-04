@@ -51,7 +51,9 @@ do_mount()
         fi
     elif /bin/grep -q " /data/volume_by_name/${LABEL} " /etc/mtab; then
         # Already in use, make a unique one
-        LABEL+="-${DEVBASE}"
+        echo "Already mounted at $mounted"
+        exit 0
+        #LABEL+="-${DEVBASE}"
     fi
     
     MOUNT_POINT="/data/volume_by_name/${LABEL}"
@@ -101,11 +103,11 @@ do_mount()
         fi
         existing_link=$(find /data/volume_by_index/ -type l -exec readlink {} \; | grep "$MOUNT_POINT")
         if [ -z "$existing_link" ]; then
-            volume_number=$(ls -l /data/volume_by_index/ | grep -c '^l')  # Count existing symlinks
-            ln -s "$MOUNT_POINT" "/data/volume_by_index/volume_$((volume_number + 1))"
+            volume_number=$(generate_vol_num)
+            ln -s "$MOUNT_POINT" "/data/volume_by_index/volume_$volume_number"
         else
             # Symlink already exists
-            echo "Symlink already exists pointing to $MOUNT_POINT: $existing_link"
+            echo "Symlink already exists pointing to $MOUNT_POINT"
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
     else
@@ -124,6 +126,13 @@ do_unmount()
         /bin/umount -l ${DEVICE}
         echo "Unmounted device ${DEVICE}"
     fi
+}
+
+generate_vol_num()
+{
+    input=$DEVBASE
+    char=${input: 2:1}
+    echo $((36#"$char" - 10))
 }
 
 if ! [ -b $DEVICE ]
