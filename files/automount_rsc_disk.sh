@@ -67,10 +67,16 @@ do_mount()
 
     /bin/mount -o ${OPTS} ${DEVICE} ${MOUNT_POINT}
     if [ $? -eq 0 ]; then
-        if grep -qF "$partition_uuid" /etc/fstab; then
+        if grep -qF "UUID=$partition_uuid $MOUNT_POINT" /etc/fstab; then
             # Does not add to fstab if there's an fstab entry for the device.
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry $data_directory already exists in /etc/fstab"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry $MOUNT_POINT already exists in /etc/fstab"
         else
+            #check if mountpoint exist in fstab, if so, remove it.
+            if grep -qwF "$MOUNT_POINT" /etc/fstab; then
+                ESCAPED_MOUNT_POINT=$(echo "$MOUNT_POINT" | sed 's/\//\\\//g')
+                echo "Escaped mount point: $ESCAPED_MOUNT_POINT"
+                sed -i "/$ESCAPED_MOUNT_POINT/d" /etc/fstab
+            fi
             echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail 0 0" >> /etc/fstab
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
