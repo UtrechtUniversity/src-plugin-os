@@ -12,80 +12,52 @@ if [[ $# -ne 1 ]]; then
     usage
 fi
 
+storage_config="/etc/rsc/storage.json"
+workspace_data=$(cat "$storage_config")
+volume_mount_no_name=$(echo "$workspace_data" | jq -r '.volume_mount_no_name')
 DEVBASE=$1
 DEVICE="/dev/${DEVBASE}"
 
 # See if this drive is already mounted, and if so where
 MOUNT_POINT=$(/bin/mount | /bin/grep -w ${DEVICE} | /usr/bin/awk '{ print $3 }')
 echo "Device is mounted at $MOUNT_POINT"
-mkdir -p /data/volume_by_index/
-mkdir -p /data/volume_by_name/
-chmod 777 /data/volume_by_index/
-chmod 777 /data/volume_by_name/
+mkdir -p /data/
+chmod 777 /data/
+
 
 do_mount()
 {
     # Get info for this drive: $ID_FS_LABEL, $ID_FS_UUID, and $ID_FS_TYPE
     eval $(/sbin/blkid -o udev ${DEVICE})
 
-    # Figure out a mount point to use
-    MAX_RETRIES=3
-    RETRY_COUNT=0
-
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        LABEL=$(/opt/rsc-utilities/get_disk.sh $DEVBASE)
-
-        if [ -n "$LABEL" ]; then
-            # The result is not empty, break out of the loop
-            break
-        else
-            # Increment the retry count and wait before trying again
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            sleep 1  # Adjust the sleep duration as needed
-        fi
-    done
+    if [ "$volume_mount_no_name" = true ]; then
+        LABEL=$(get_disk_number)
+    else
+        LABEL=$(get_disk_name)
+    fi
 
     if [[ -z "${LABEL}" ]]; then
         if [[ "${ID_FS_PARTLABEL}" ]]; then
              LABEL=${ID_FS_PARTLABEL}
         fi
-    elif /bin/grep -q " /data/volume_by_name/${LABEL} " /etc/mtab; then
+    elif /bin/grep -q " /data/${LABEL} " /etc/mtab; then
         # Already in use, make a unique one
         echo "Already mounted at $mounted"
         exit 0
         #LABEL+="-${DEVBASE}"
     fi
     
-    MOUNT_POINT="/data/volume_by_name/${LABEL}"
+    MOUNT_POINT="/data/${LABEL}"
     
-    # Check if MOUNT_POINT is "/data/volume_by_name/"
-    if [ "$MOUNT_POINT" = "/data/volume_by_name/" ]; then
-        echo "Mount point is /data/volume_by_name/. Exiting the script."
+    # Check if MOUNT_POINT is "/data/"
+    if [ "$MOUNT_POINT" = "/data/" ]; then
+        echo "Mount point is /data/. Exiting the script."
         exit 1
     fi
 
     echo "Mount point: ${MOUNT_POINT}"
     
-    MAX_RETRIES=5
-    RETRY_COUNT=0
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        # Check if the device is ready
-        # xfs_info $DEVICE could also be used for the check
-        if [ -n "$(blkid -s UUID -o value "$DEVICE")" ]; then
-            echo "Device $DEVICE is ready."
-            break
-        else
-            echo "Device $DEVICE not ready. Retrying in 2 seconds..."
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            sleep 2
-        fi
-    done
-
-    # Mount the partition if it's ready
-    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-        echo "Failed to detect $DEVICE after $MAX_RETRIES retries. Exiting."
-        exit 1
-    fi
+    wait_for_device
 
     /bin/mkdir -p ${MOUNT_POINT}
 
@@ -100,14 +72,6 @@ do_mount()
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry $data_directory already exists in /etc/fstab"
         else
             echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail 0 0" >> /etc/fstab
-        fi
-        existing_link=$(find /data/volume_by_index/ -type l -exec readlink {} \; | grep "$MOUNT_POINT")
-        if [ -z "$existing_link" ]; then
-            volume_number=$(generate_vol_num)
-            ln -s "$MOUNT_POINT" "/data/volume_by_index/volume_$volume_number"
-        else
-            # Symlink already exists
-            echo "Symlink already exists pointing to $MOUNT_POINT"
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
     else
@@ -128,11 +92,56 @@ do_unmount()
     fi
 }
 
-generate_vol_num()
+get_disk_number()
 {
     input=$DEVBASE
     char=${input: 2:1}
-    echo $((36#"$char" - 10))
+    vol_num=$(echo $((36#"$char" - 10)))
+    echo "volume_$vol_num"
+}
+
+get_disk_name()
+{
+    local MAX_RETRIES=3
+    local RETRY_COUNT=0
+
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        LABEL=$(/opt/rsc-utilities/get_disk.sh $DEVBASE)
+
+        if [ -n "$LABEL" ]; then
+            # The result is not empty, break out of the loop
+            echo $LABEL
+            break
+        else
+            # Increment the retry count and wait before trying again
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            sleep 1  # Adjust the sleep duration as needed
+        fi
+    done
+}
+
+wait_for_device() 
+{
+    local MAX_RETRIES=5
+    local RETRY_COUNT=0
+
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        # Check if the device is ready
+        # xfs_info $DEVICE could also be used for the check
+        if [ -n "$(blkid -s UUID -o value "$DEVICE")" ]; then
+            echo "Device $DEVICE is ready."
+            return 0  # Success
+        else
+            echo "Device $DEVICE not ready. Retrying in 2 seconds..."
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            sleep 2
+        fi
+    done
+
+    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+        echo "Failed to detect $DEVICE after $MAX_RETRIES retries. Exiting."
+        exit 1
+    fi
 }
 
 if ! [ -b $DEVICE ]
