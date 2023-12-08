@@ -42,7 +42,7 @@ do_mount()
         fi
     elif /bin/grep -q " /data/${LABEL} " /etc/mtab; then
         # Already in use, make a unique one
-        echo "Already mounted at $mounted"
+        echo "Already mounted at /data/${LABEL}"
         exit 0
         #LABEL+="-${DEVBASE}"
     fi
@@ -102,7 +102,7 @@ get_disk_number()
 {
     input=$DEVBASE
     char=${input: 2:1}
-    vol_num=$(echo $((36#"$char" - 10)))
+    vol_num=$(echo $((36#"$char" - 9)))
     echo "volume_$vol_num"
 }
 
