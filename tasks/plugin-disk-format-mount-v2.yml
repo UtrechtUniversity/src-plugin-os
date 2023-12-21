@@ -44,6 +44,12 @@
         dest: /opt/rsc-utilities/automount_rsc_disk.sh
         mode: 0755
 
+    - name: Copy rsc-disk-handler.service to the systemd units directory
+      ansible.builtin.copy:
+        src: rsc-disk-handler.service
+        dest: /etc/systemd/system/rsc-disk-handler.service
+        mode: 0644
+
     - name: Restart rsc-disk-handler service
       ansible.builtin.systemd_service:
         state: restarted
