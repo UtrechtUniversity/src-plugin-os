@@ -50,6 +50,10 @@
         dest: /etc/systemd/system/rsc-disk-handler.service
         mode: 0644
 
+    - name: Trigger udevadm
+      ansible.builtin.shell:
+        cmd: udevadm trigger
+
     - name: Restart rsc-disk-handler service
       ansible.builtin.systemd_service:
         state: restarted
