@@ -62,3 +62,4 @@ fi
 
 # Cleanup unused directories
 find "/data" -mindepth 1 -maxdepth 1 -type d ! -name "datasets" -empty -exec sh -c '! mountpoint -q "{}"' \; -delete
+

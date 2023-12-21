@@ -19,3 +19,4 @@
       when: result is skipped and (ansible_distribution == 'CentOS' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'Fedora') and os_disk_format is defined and (os_disk_format | bool)
       #result.skipped
       include: tasks/plugin-disk-format-mount.yml
+
