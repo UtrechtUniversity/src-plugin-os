@@ -1,8 +1,15 @@
 - name: Mount disks in Linux
   block:
-    - name: Create rsc dir
+    - name: Create /etc/rsc dir
       ansible.builtin.file:
         path: /etc/rsc
+        recurse: true
+        state: directory
+        mode: 0700
+      
+    - name: Create /opt/rsc-utilities dir
+      ansible.builtin.file:
+        path: /opt/rsc-utilities
         recurse: true
         state: directory
         mode: 0700
@@ -19,10 +26,10 @@
             "volume_mount_no_name": "{{ volume_mount_no_name }}"
           }
 
-    - name: Copy get_disk.sh to /opt/rsc-utilities/
+    - name: Copy disk_handler_rsc.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
-        src: get_disk.sh
-        dest: /opt/rsc-utilities/get_disk.sh
+        src: disk_handler_rsc.sh
+        dest: /opt/rsc-utilities/disk_handler_rsc.sh
         mode: 0755
 
     - name: Copy format_rsc_disk.sh to /opt/rsc-utilities/
@@ -37,33 +44,13 @@
         dest: /opt/rsc-utilities/automount_rsc_disk.sh
         mode: 0755
 
-    - name: Copy 99-local-rsc-disk.rules to the udev directory
-      ansible.builtin.copy:
-        src: 99-local-rsc-disk.rules
-        dest: /etc/udev/rules.d/99-local-rsc-disk.rules
-        mode: 0644
-
-    - name: Copy rsc-format-disk@.service to the systemd units directory
-      ansible.builtin.copy:
-        src: rsc-format-disk@.service
-        dest: /etc/systemd/system/rsc-format-disk@.service
-        mode: 0644
-
-    - name: Copy rsc-mount-disk@.service to the systemd units directory
-      ansible.builtin.copy:
-        src: rsc-mount-disk@.service
-        dest: /etc/systemd/system/rsc-mount-disk@.service
-        mode: '644'
-
-    # Restart udev service and systemctl daemon reload.
-    - name: Systemd daemon reload
-      ansible.builtin.systemd:
+    - name: Restart rsc-disk-handler service
+      ansible.builtin.systemd_service:
+        state: restarted
         daemon_reload: true
-
-    - name: Reload udev
-      ansible.builtin.command:
-        cmd: "udevadm control --reload"
-
-    - name: Trigger udevadm
-      ansible.builtin.command:
-        cmd: bash -c 'udevadm trigger --action="add" --subsystem-match="block" /sys/block/vd[b-z]'
+        name: rsc-disk-handler.service
+   
+    - name: Enable rsc-disk-handler service
+      ansible.builtin.systemd_service:
+        name: rsc-disk-handler.service
+        enabled: true

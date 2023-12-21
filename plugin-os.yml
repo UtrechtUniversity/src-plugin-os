@@ -12,7 +12,7 @@
       when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
       include: tasks/plugin-os-linux.yml
     - name: Disk format mount V2
-      when: cloud_type == 'OpenStack' and (ansible_distribution == 'Ubuntu' and (ansible_distribution_version == '18.04' or ansible_distribution_version == '20.04' or ansible_distribution_version == '22.04'))
+      when: cloud_type == 'OpenStack' and (ansible_distribution == 'CentOS' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'Fedora') and os_disk_format is defined and (os_disk_format | bool)
       include_tasks: tasks/plugin-disk-format-mount-v2.yml
       register: result
     - name: Disk format mount
