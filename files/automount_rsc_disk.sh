@@ -8,7 +8,7 @@ usage()
     exit 1
 }
 
-if [[ $# -ne 1 ]]; then
+if [[ $# -ne 2 ]]; then
     usage
 fi
 
@@ -16,14 +16,19 @@ storage_config="/etc/rsc/storage.json"
 workspace_data=$(cat "$storage_config")
 volume_mount_no_name=$(echo "$workspace_data" | jq -r '.volume_mount_no_name')
 DEVBASE=$1
-DEVICE="/dev/${DEVBASE}"
+DEVICE="${DEVBASE}1"
+DISK_NAME=$2
+partition_uuid=$(blkid -s UUID -o value "$DEVICE")
 
 # See if this drive is already mounted, and if so where
-MOUNT_POINT=$(/bin/mount | /bin/grep -w ${DEVICE} | /usr/bin/awk '{ print $3 }')
-echo "Device is mounted at $MOUNT_POINT"
 mkdir -p /data/
 chmod 777 /data/
 
+if /bin/mount | /bin/grep -w ${DEVICE}; then
+    MOUNTED_AT=$(/bin/mount | /bin/grep -w ${DEVICE} | /usr/bin/awk '{ print $3 }')
+    echo "Device is already mounted at $MOUNTED_AT"
+    exit 0;
+fi
 
 do_mount()
 {
@@ -33,7 +38,7 @@ do_mount()
     if [ "$volume_mount_no_name" = true ]; then
         LABEL=$(get_disk_number)
     else
-        LABEL=$(get_disk_name)
+        LABEL=$DISK_NAME
     fi
 
     if [[ -z "${LABEL}" ]]; then
@@ -62,8 +67,7 @@ do_mount()
     /bin/mkdir -p ${MOUNT_POINT}
 
     # Global mount options
-    OPTS="rw,relatime"
-    partition_uuid=$(blkid -s UUID -o value "$DEVICE")
+    OPTS="x-mount.mkdir"
 
     /bin/mount -o ${OPTS} ${DEVICE} ${MOUNT_POINT}
     if [ $? -eq 0 ]; then
@@ -78,7 +82,14 @@ do_mount()
                     echo "Escaped mount point: $ESCAPED_MOUNT_POINT"
                     sed -i "/$ESCAPED_MOUNT_POINT/d" /etc/fstab
                 fi
-                echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail 0 0" >> /etc/fstab
+                echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
+            fi
+        else
+            if grep -qF "UUID=$partition_uuid" /etc/fstab; then
+                # Does not add to fstab if there's an fstab entry for the device.
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry UUID=$partition_uuid already exists in /etc/fstab"
+            else
+                echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
             fi
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
@@ -102,30 +113,19 @@ do_unmount()
 
 get_disk_number()
 {
-    input=$DEVBASE
-    char=${input: 2:1}
-    vol_num=$(echo $((36#"$char" - 9)))
-    echo "volume_$vol_num"
-}
+    max_attempts=100
 
-get_disk_name()
-{
-    local MAX_RETRIES=3
-    local RETRY_COUNT=0
-
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        LABEL=$(/opt/rsc-utilities/get_disk.sh $DEVBASE)
-
-        if [ -n "$LABEL" ]; then
-            # The result is not empty, break out of the loop
-            echo $LABEL
-            break
-        else
-            # Increment the retry count and wait before trying again
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            sleep 1  # Adjust the sleep duration as needed
+    next_number=1
+    while ((next_number <= max_attempts)); do
+        if ! grep -qw "/data/volume_${next_number}" /etc/fstab; then
+            echo "volume_${next_number}"
+            return
         fi
+        ((next_number++))
     done
+
+    echo "Error: Unable to find an available volume number after $max_attempts attempts." >&2
+    exit 1
 }
 
 wait_for_device() 

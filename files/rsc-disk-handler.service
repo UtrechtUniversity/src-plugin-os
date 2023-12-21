@@ -1,0 +1,11 @@
+[Unit]
+Description=Formats and mounts Research Cloud Disk
+After=local-fs.target
+
+[Service]
+Type=oneshot
+GuessMainPID=no
+ExecStart=/bin/bash /opt/rsc-utilities/disk_handler_rsc.sh
+
+[Install]
+WantedBy=multi-user.target

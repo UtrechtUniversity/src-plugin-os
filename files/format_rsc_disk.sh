@@ -1,15 +1,14 @@
 #!/bin/bash
 
 # Ensure that the script is called with the correct number of arguments
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 2 ]; then
     echo "Usage: $0 device_path"
     exit 1
 fi
 
 # Extract arguments
-device="$1"
-device_path="/dev/$1"
-directory_name="$(/opt/rsc-utilities/get_disk.sh $device)"
+device_path=$1
+directory_name=$2
 
 # Check if the device has a partition table using sfdisk
 if sfdisk -d "$device_path" >/dev/null 2>&1; then
@@ -36,3 +35,5 @@ else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - XFS label added for device $device_path"
     fi
 fi
+
+sleep 1
