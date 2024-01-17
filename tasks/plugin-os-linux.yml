@@ -99,6 +99,7 @@
         alias halt='echo "halt: Command disabled by Research Cloud Administration"'
         alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
         alias python=python3
+        alias pip=pip3
 
   - name: Switch off local firewall (open by default on Ubuntu)
     systemd:
