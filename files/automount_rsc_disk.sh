@@ -18,9 +18,19 @@ volume_mount_no_name=$(echo "$workspace_data" | jq -r '.volume_mount_no_name')
 DEVBASE=$1
 DEVICE="${DEVBASE}1"
 DISK_NAME=$2
+FILESYSTEM="xfs"
 partition_uuid=$(blkid -s UUID -o value "$DEVICE")
 
-# See if this drive is already mounted, and if so where
+get_partition_info()
+{
+    part_info=$(/bin/lsblk -lp -o NAME,FSTYPE,TYPE,UUID -n $DEVBASE | awk '($2!=""  && (($3=="disk" && ($2!="vfat" && $2!="swap")) || ($3=="part" && $2!="swap"))) { print "{\"file_system\":\""$2"\",\"name\":\""$1"\",\"uuid\":\""$4"\"}" }')
+    DEVICE=$(echo "$part_info" | jq -r '.name')
+    FILESYSTEM=$(echo "$part_info" | jq -r '.file_system')
+    partition_uuid=$(echo "$part_info" | jq -r '.uuid')
+}
+
+get_partition_info
+
 mkdir -p /data/
 chmod 777 /data/
 
@@ -46,7 +56,7 @@ do_mount()
              LABEL=${ID_FS_PARTLABEL}
         fi
     elif /bin/grep -q " /data/${LABEL} " /etc/mtab; then
-        # Already in use, make a unique one
+        # Already in use
         echo "Already mounted at /data/${LABEL}"
         exit 0
         #LABEL+="-${DEVBASE}"
@@ -82,14 +92,14 @@ do_mount()
                     echo "Escaped mount point: $ESCAPED_MOUNT_POINT"
                     sed -i "/$ESCAPED_MOUNT_POINT/d" /etc/fstab
                 fi
-                echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
+                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
             fi
         else
             if grep -qF "UUID=$partition_uuid" /etc/fstab; then
                 # Does not add to fstab if there's an fstab entry for the device.
                 echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry UUID=$partition_uuid already exists in /etc/fstab"
             else
-                echo "UUID=$partition_uuid $MOUNT_POINT xfs defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
+                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
             fi
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
