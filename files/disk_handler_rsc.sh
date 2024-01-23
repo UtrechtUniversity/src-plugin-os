@@ -44,6 +44,7 @@ while [ $retry_count -lt $max_retries ]; do
             fi
             volume_path=$(disk_serial_to_path $volume_id)
             /opt/rsc-utilities/format_rsc_disk.sh $volume_path $volume_name #add error handling, should move to the next item if failed.
+            sleep 5
             /opt/rsc-utilities/automount_rsc_disk.sh $volume_path $volume_name
             echo "$volume_name $volume_id" >> "$log_file" 2>&1
         done
