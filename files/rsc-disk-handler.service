@@ -1,6 +1,6 @@
 [Unit]
 Description=Formats and mounts Research Cloud Disk
-After=local-fs.target
+After=network.target
 
 [Service]
 Type=forking
