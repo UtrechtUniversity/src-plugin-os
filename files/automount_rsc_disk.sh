@@ -42,24 +42,15 @@ fi
 
 do_mount()
 {
-    # Get info for this drive: $ID_FS_LABEL, $ID_FS_UUID, and $ID_FS_TYPE
-    eval $(/sbin/blkid -o udev ${DEVICE})
-
     if [ "$volume_mount_no_name" = true ]; then
         LABEL=$(get_disk_number)
     else
         LABEL=$DISK_NAME
     fi
 
-    if [[ -z "${LABEL}" ]]; then
-        if [[ "${ID_FS_PARTLABEL}" ]]; then
-             LABEL=${ID_FS_PARTLABEL}
-        fi
-    elif /bin/grep -q " /data/${LABEL} " /etc/mtab; then
-        # Already in use
-        echo "Already mounted at /data/${LABEL}"
+    if /bin/grep -q " /data/${LABEL} " /etc/mtab; then
+        echo "Error: Mount point /data/${LABEL} is already in use."
         exit 0
-        #LABEL+="-${DEVBASE}"
     fi
     
     MOUNT_POINT="/data/${LABEL}"
