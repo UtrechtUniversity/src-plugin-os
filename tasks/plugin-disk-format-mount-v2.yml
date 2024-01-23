@@ -1,5 +1,11 @@
 - name: Mount disks in Linux
   block:
+    - name: Install gdisk on CentOS 
+      yum:
+        name: gdisk
+        state: present
+      when: ansible_distribution == 'CentOS'
+
     - name: Create /etc/rsc dir
       ansible.builtin.file:
         path: /etc/rsc
