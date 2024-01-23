@@ -11,7 +11,7 @@ device_path=$1
 directory_name=$2
 
 # Check if the device has a partition table using sfdisk
-if [ -n "$(blkid -o value -s TYPE "$device_path")" ]; then
+if  blkid -o value -s TYPE "$device_path" &> /dev/null; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Existing filesystem found on $device_path"
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Disk $device_path is raw and safe to format"
