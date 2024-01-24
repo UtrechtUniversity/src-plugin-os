@@ -99,7 +99,13 @@
         alias halt='echo "halt: Command disabled by Research Cloud Administration"'
         alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
         alias python=python3
-        alias pip=pip3
+
+  - name: Create a symbolic link pip to pip3
+    when: ansible_distribution == 'CentOS'
+    ansible.builtin.file:
+      src: /bin/pip3
+      dest: /bin/pip
+      state: link
 
   - name: Switch off local firewall (open by default on Ubuntu)
     systemd:
