@@ -31,7 +31,7 @@ while [ $retry_count -lt $max_retries ]; do
     curl_output=$(curl -s "$storage_api_endpoint/$workspace_id/" -H "authorization: $co_token" -H "content-type: application/json")
 
     # Check if the response contains volume_name and volume_id
-    if jq -e '.meta.storages | length > 0' <<< "$curl_output" >/dev/null; then
+    if [ -n "$curl_output" ]; then
         jq -c '.meta.storages | .[]' <<< "$curl_output" | while IFS= read -r storage; do
         
             volume_name=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
@@ -50,7 +50,7 @@ while [ $retry_count -lt $max_retries ]; do
         done
         break
     else
-        echo "Retry $((retry_count + 1)): Volume data was not found in the endpoint. Retrying in $retry_delay seconds..." >> "$log_file" 2>&1
+        echo "Retry $((retry_count + 1)): unable to reach the endpoint. Retrying in $retry_delay seconds..." >> "$log_file" 2>&1
         sleep $retry_delay
         retry_count=$((retry_count + 1))
     fi
