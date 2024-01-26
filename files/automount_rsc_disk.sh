@@ -66,6 +66,7 @@ do_mount()
     wait_for_device
 
     /bin/mkdir -p ${MOUNT_POINT}
+    chmod 777 ${MOUNT_POINT}
 
     # Global mount options
     OPTS="x-mount.mkdir"
