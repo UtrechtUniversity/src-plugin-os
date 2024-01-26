@@ -116,7 +116,7 @@ get_disk_number()
 {
     max_attempts=100
 
-    next_number=1
+    next_number=2
     while ((next_number <= max_attempts)); do
         if ! grep -qw "/data/volume_${next_number}" /etc/fstab; then
             echo "volume_${next_number}"
