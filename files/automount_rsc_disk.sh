@@ -94,6 +94,7 @@ do_mount()
                 echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir=777 0 0" >> /etc/fstab
             fi
         fi
+        chmod 777 ${MOUNT_POINT}
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
     else
         echo "Mounting ${DEVICE} at ${MOUNT_POINT} failed"
