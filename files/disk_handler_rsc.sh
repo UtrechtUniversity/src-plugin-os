@@ -37,9 +37,9 @@ while [ $retry_count -lt $max_retries ]; do
             volume_name=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
             volume_id=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
 
-            if [ "$volume_name" = "null" ] || [ "$volume_id" = "null" ]; then
+            if [ "$volume_name" = "null" ] || [ "$volume_id" = "null" ] || [ "$volume_name" = "" ]; then
                 echo "Key or volume_id is 'null'. Retrying..." >> "$log_file" 2>&1
-                sleep 1;
+                # fix retry 
                 continue
             fi
             volume_path=$(disk_serial_to_path $volume_id)

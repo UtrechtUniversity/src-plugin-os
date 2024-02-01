@@ -69,7 +69,7 @@ do_mount()
     chmod 777 ${MOUNT_POINT}
 
     # Global mount options
-    OPTS="x-mount.mkdir"
+    OPTS="x-mount.mkdir=777"
 
     /bin/mount -o ${OPTS} ${DEVICE} ${MOUNT_POINT}
     if [ $? -eq 0 ]; then
@@ -84,14 +84,14 @@ do_mount()
                     echo "Escaped mount point: $ESCAPED_MOUNT_POINT"
                     sed -i "/$ESCAPED_MOUNT_POINT/d" /etc/fstab
                 fi
-                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
+                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir=777 0 0" >> /etc/fstab
             fi
         else
             if grep -qF "UUID=$partition_uuid" /etc/fstab; then
                 # Does not add to fstab if there's an fstab entry for the device.
                 echo "$(date '+%Y-%m-%d %H:%M:%S') - Entry UUID=$partition_uuid already exists in /etc/fstab"
             else
-                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir 0 0" >> /etc/fstab
+                echo "UUID=$partition_uuid $MOUNT_POINT $FILESYSTEM defaults,nofail,x-mount.mkdir=777 0 0" >> /etc/fstab
             fi
         fi
         echo "Mounted ${DEVICE} at ${MOUNT_POINT}"
