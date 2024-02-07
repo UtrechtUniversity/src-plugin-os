@@ -1,0 +1,72 @@
+- name: Mount disks in Linux
+  block:
+    - name: Install gdisk on CentOS 
+      yum:
+        name: gdisk
+        state: present
+      when: ansible_distribution == 'CentOS'
+
+    - name: Create /etc/rsc dir
+      ansible.builtin.file:
+        path: /etc/rsc
+        recurse: true
+        state: directory
+        mode: 0700
+      
+    - name: Create /opt/rsc-utilities dir
+      ansible.builtin.file:
+        path: /opt/rsc-utilities
+        recurse: true
+        state: directory
+        mode: 0700
+
+    - name: Put storage config
+      ansible.builtin.copy:
+        dest: /etc/rsc/storage.json
+        mode: 0600
+        content: |
+          {
+            "workspace_id": "{{ workspace_id }}",
+            "storage_api_endpoint": "{{ storage_api_endpoint }}",
+            "co_token": "{{ co_token }}",
+            "volume_mount_no_name": "{{ volume_mount_no_name }}"
+          }
+
+    - name: Copy disk_handler_rsc.sh to /opt/rsc-utilities/
+      ansible.builtin.copy:
+        src: disk_handler_rsc.sh
+        dest: /opt/rsc-utilities/disk_handler_rsc.sh
+        mode: 0755
+
+    - name: Copy format_rsc_disk.sh to /opt/rsc-utilities/
+      ansible.builtin.copy:
+        src: format_rsc_disk.sh
+        dest: /opt/rsc-utilities/format_rsc_disk.sh
+        mode: 0755
+
+    - name: Copy automount_rsc_disk.sh to /opt/rsc-utilities/
+      ansible.builtin.copy:
+        src: automount_rsc_disk.sh
+        dest: /opt/rsc-utilities/automount_rsc_disk.sh
+        mode: 0755
+
+    - name: Copy rsc-disk-handler.service to the systemd units directory
+      ansible.builtin.copy:
+        src: rsc-disk-handler.service
+        dest: /etc/systemd/system/rsc-disk-handler.service
+        mode: 0644
+
+    - name: Trigger udevadm
+      ansible.builtin.shell:
+        cmd: udevadm trigger
+
+    - name: Restart rsc-disk-handler service
+      ansible.builtin.systemd_service:
+        state: restarted
+        daemon_reload: true
+        name: rsc-disk-handler.service
+   
+    - name: Enable rsc-disk-handler service
+      ansible.builtin.systemd_service:
+        name: rsc-disk-handler.service
+        enabled: true

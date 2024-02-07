@@ -291,4 +291,4 @@
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
-    
+
