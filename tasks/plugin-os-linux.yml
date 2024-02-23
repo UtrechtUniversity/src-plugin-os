@@ -161,6 +161,7 @@
         - jq
         - curl
         - ntfs-3g
+        - fail2ban
       state: present
 
   - name: Create pam entry for mkhomedir
@@ -268,10 +269,10 @@
     regexp: 'auth (.*) pam_securetty.so'
     line: auth optional    pam_securetty.so
 
-- name: Install fail2ban on Ubuntu
-  apt:
-    name: fail2ban
-  when: ansible_distribution == 'Ubuntu'
+# - name: Install fail2ban on Ubuntu
+#   apt:
+#     name: fail2ban
+#   when: ansible_distribution == 'Ubuntu'
 
 - name: Create config file fail2ban on Ubuntu
   copy:
