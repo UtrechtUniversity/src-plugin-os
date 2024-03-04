@@ -19,7 +19,7 @@ storage_api_endpoint=$(echo "$workspace_data" | jq -r '.storage_api_endpoint')
 
 disk_serial_to_path()
 {
-    readlink -f $(ls /dev/disk/by-id/*$1* | grep -v part)
+    readlink -f $(ls /dev/disk/azure/scsi1/*$1* | grep -v part)
 }
 
 # Execute the curl request and retrieve storages data
@@ -30,23 +30,23 @@ retry_delay=5
 while [ $retry_count -lt $max_retries ]; do
     curl_output=$(curl -s "$storage_api_endpoint/$workspace_id/" -H "authorization: $co_token" -H "content-type: application/json")
 
-    # Check if the response contains volume_name and volume_id
+    # Check if the response contains volume_name and volume_lun
     if [ -n "$curl_output" ]; then
         jq -c '.meta.storages | .[]' <<< "$curl_output" | while IFS= read -r storage; do
         
             volume_name=$(echo "$storage" | jq -r '.name' | tr ' ' '_')
-            volume_id=$(echo "$storage" | jq -r '.volume_id' | cut -c 1-20)
+            volume_lun=$(( $(echo "$storage" | jq -r '.index') + 10 ))
 
-            if [ "$volume_name" = "null" ] || [ "$volume_id" = "null" ] || [ "$volume_name" = "" ]; then
-                echo "Key or volume_id is 'null'. Retrying..." >> "$log_file" 2>&1
+            if [ "$volume_name" = "null" ] || [ "$volume_lun" = "null" ] || [ "$volume_name" = "" ]; then
+                echo "Key or volume_lun is 'null'. Retrying..." >> "$log_file" 2>&1
                 # fix retry 
                 continue
             fi
-            volume_path=$(disk_serial_to_path $volume_id)
+            volume_path=$(disk_serial_to_path $volume_lun)
             /opt/rsc-utilities/format_rsc_disk.sh $volume_path $volume_name #add error handling, should move to the next item if failed.
             sleep 5
             /opt/rsc-utilities/automount_rsc_disk.sh $volume_path $volume_name
-            echo $(date) "Volume path: $volume_path ,Volume name: $volume_name ,Volume ID: $volume_id" >> "$log_file" 2>&1
+            echo $(date) "Volume path: $volume_path ,Volume name: $volume_name ,Volume lun: $volume_lun" >> "$log_file" 2>&1
         done
         break
     else

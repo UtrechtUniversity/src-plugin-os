@@ -37,6 +37,14 @@
         src: disk_handler_rsc.sh
         dest: /opt/rsc-utilities/disk_handler_rsc.sh
         mode: 0755
+      when: cloud_type == 'OpenStack'
+
+    - name: Copy azure_disk_handler_rsc.sh to /opt/rsc-utilities/
+      ansible.builtin.copy:
+        src: azure_disk_handler_rsc.sh
+        dest: /opt/rsc-utilities/disk_handler_rsc.sh
+        mode: 0755
+      when: cloud_type == 'Azure'
 
     - name: Copy format_rsc_disk.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
