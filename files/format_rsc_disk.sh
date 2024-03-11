@@ -9,6 +9,11 @@ fi
 # Extract arguments
 device_path=$1
 directory_name=$2
+if [[ $device_path == *nvme* ]]; then
+    partition="${device_path}p1"
+else
+    partition="${device_path}1"
+fi
 
 # Check if the device has a partition table using sfdisk
 if parted -s "$device_path" print | grep -q "Partition Table: \(gpt\|msdos\)"; then
@@ -23,16 +28,16 @@ else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - made gpt label for $device_path"
         
         sgdisk --new 1::0 $device_path
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - partition "$device_path"1 created"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - partition "$partition" created"
         #Setting GPT PARTLABEL
         sgdisk -c 1:"$directory_name" "$device_path"
         echo "$(date '+%Y-%m-%d %H:%M:%S') - GPT Partition lable $directory_name created for device $device_path"
 
-        mkfs.xfs "$device_path"1
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - ${device_path}1 formatted as XFS"
+        mkfs.xfs $partition
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - ${partition} formatted as XFS"
 
-        xfs_admin -L "$directory_name" "$device_path"1
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - XFS label added for device $device_path"
+        xfs_admin -L "$directory_name" "$partition"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - XFS label added for device $partition"
     fi
 fi
 
