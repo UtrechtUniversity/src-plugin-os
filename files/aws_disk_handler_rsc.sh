@@ -19,7 +19,7 @@ storage_api_endpoint=$(echo "$workspace_data" | jq -r '.storage_api_endpoint')
 
 disk_serial_to_path()
 {
-    readlink -f $(ls /dev/disk/by-id/*$1* | grep -v part)
+    readlink -f $(ls /dev/disk/by-id/*$1* | grep -v part) | sort | uniq
 }
 
 # Execute the curl request and retrieve storages data
