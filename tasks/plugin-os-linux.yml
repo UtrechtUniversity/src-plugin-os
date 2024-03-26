@@ -85,10 +85,8 @@
       - sleep.target
       - suspend-then-hibernate.target
       - suspend.target
-      - halt.target
       - hibernate.target
       - hybrid-sleep.target
-      - poweroff.target
 
   - name: Add aliases to notify users
     blockinfile:
