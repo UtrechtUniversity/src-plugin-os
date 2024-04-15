@@ -85,10 +85,8 @@
       - sleep.target
       - suspend-then-hibernate.target
       - suspend.target
-      - halt.target
       - hibernate.target
       - hybrid-sleep.target
-      - poweroff.target
 
   - name: Add aliases to notify users
     blockinfile:
@@ -99,6 +97,13 @@
         alias halt='echo "halt: Command disabled by Research Cloud Administration"'
         alias shutdown='echo "shutdown: Command disabled by Research Cloud Administration"'
         alias python=python3
+
+  - name: Create a symbolic link pip to pip3
+    when: ansible_distribution == 'CentOS'
+    ansible.builtin.file:
+      src: /bin/pip3
+      dest: /bin/pip
+      state: link
 
   - name: Switch off local firewall (open by default on Ubuntu)
     systemd:
@@ -154,6 +159,7 @@
         - jq
         - curl
         - ntfs-3g
+        - fail2ban
       state: present
 
   - name: Create pam entry for mkhomedir
@@ -189,10 +195,8 @@
       - sleep.target
       - suspend-then-hibernate.target
       - suspend.target
-      - halt.target
       - hibernate.target
       - hybrid-sleep.target
-      - poweroff.target
 
   - name: Add aliases to notify users
     blockinfile:
@@ -262,10 +266,10 @@
     regexp: 'auth (.*) pam_securetty.so'
     line: auth optional    pam_securetty.so
 
-- name: Install fail2ban on Ubuntu
-  apt:
-    name: fail2ban
-  when: ansible_distribution == 'Ubuntu'
+# - name: Install fail2ban on Ubuntu
+#   apt:
+#     name: fail2ban
+#   when: ansible_distribution == 'Ubuntu'
 
 - name: Create config file fail2ban on Ubuntu
   copy:
@@ -287,4 +291,4 @@
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
-    
+
