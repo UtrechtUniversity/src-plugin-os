@@ -1,0 +1,40 @@
+---
+name: Weekly sync with the upstream gitlab repo
+on:
+  schedule:
+    - cron: '22 0 * * SUN' # 22 past midnight on Sunday
+  workflow_dispatch:
+
+jobs:
+  sync_upstream:
+      runs-on: ubuntu-latest
+      permissions:
+        contents: write
+        pull-requests: write
+      env:
+        UPSTREAM: https://gitlab.com/rsc-surf-nl/plugins/plugin-os.git 
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Debug
+          run: git --version && ls -l
+        - name: Define upstream
+          run: git remote add upstream ${{ env.UPSTREAM }}
+        - name: Configure git
+          run: |
+            git config user.name "GitHubActions"
+            git config user.email "<>"
+        - name: Pull from upstream
+          run: git pull upstream main -s ort --rebase -Xignore-all-space -Xours
+        - name: Debug
+          run: grep -r "<<<<<<<" . --context=10
+        - name: Debug
+          run: git log
+        - name: Run yamllint syntax check
+          run: pip install yamllint && yamllint -d "{rules:{}}" .
+        - name: Create Pull Request
+          uses: peter-evans/create-pull-request@v6
+          with:
+            title: Merge changes from upstream (cron)
