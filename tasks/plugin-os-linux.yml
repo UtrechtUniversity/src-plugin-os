@@ -11,7 +11,7 @@
       name:
         - epel-release
       state: present
-    when: ansible_os_family == "RedHat" or ansible_os_family == "CentOS"
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky'
 
   - name: Install required packages (1)
     package:
@@ -35,7 +35,7 @@
 
   - name: Update pam to enable enablemkhomedir CentOS
     command: authconfig --enablemkhomedir --update
-    when:  ansible_distribution == 'CentOS'
+    when:  ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
 
   - name: Update pam to enable enablemkhomedir Fedora
     command: authselect enable-feature with-mkhomedir
@@ -61,7 +61,7 @@
       src: fail2ban-centos
       dest: /etc/fail2ban/jail.local
       mode: 0644
-    when: ansible_distribution == 'CentOS' 
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
 
 
   - name: Create config file fail2ban on Fedora
@@ -99,7 +99,7 @@
         alias python=python3
 
   - name: Create a symbolic link pip to pip3
-    when: ansible_distribution == 'CentOS'
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
     ansible.builtin.file:
       src: /bin/pip3
       dest: /bin/pip
