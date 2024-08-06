@@ -11,7 +11,7 @@
       name:
         - epel-release
       state: present
-    when: (ansible_distribution == 'CentOS') or (ansible_distribution == 'RedHat')
+    when: ansible_os_family == "RedHat" or ansible_os_family == "CentOS"
 
   - name: Install required packages (1)
     package:
