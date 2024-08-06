@@ -61,7 +61,14 @@
       src: fail2ban-centos
       dest: /etc/fail2ban/jail.local
       mode: 0644
-    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
+    when: ansible_distribution == 'CentOS'
+
+  - name: Create config file fail2ban on Rocky 
+    copy:
+      src: fail2ban-rocky
+      dest: /etc/fail2ban/jail.local
+      mode: 0644
+    when: ansible_distribution == 'Rocky'
 
   - name: Create config file fail2ban on Rocky 
     copy:
