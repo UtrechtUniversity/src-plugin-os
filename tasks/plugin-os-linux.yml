@@ -35,7 +35,7 @@
 
   - name: Update pam to enable enablemkhomedir CentOS
     command: authconfig --enablemkhomedir --update
-    when:  ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
+    when:  ansible_distribution == 'CentOS'
 
   - name: Update pam to enable enablemkhomedir Fedora
     command: authselect enable-feature with-mkhomedir
