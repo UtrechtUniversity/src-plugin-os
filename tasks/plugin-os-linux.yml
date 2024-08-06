@@ -106,7 +106,7 @@
         alias python=python3
 
   - name: Create a symbolic link pip to pip3
-    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky'
+    when: ansible_distribution == 'CentOS'
     ansible.builtin.file:
       src: /bin/pip3
       dest: /bin/pip
