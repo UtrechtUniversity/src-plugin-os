@@ -2,7 +2,7 @@
   timezone:
     name: Europe/Amsterdam
 
-- name: CentOS or Fedora
+- name: CentOS or Fedora or Rocky
   when: ansible_os_family == "RedHat"
   block:
 
