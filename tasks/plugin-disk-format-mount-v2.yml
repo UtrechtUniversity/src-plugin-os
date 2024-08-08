@@ -4,7 +4,7 @@
       yum:
         name: gdisk
         state: present
-      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky'
 
     - name: Create /etc/rsc dir
       ansible.builtin.file:
