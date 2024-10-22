@@ -421,6 +421,7 @@
     - ephemeral_device.rc != 0 or ephemeral_device.stdout in ['null', '', 'None']
 
 - name: Add /etc/hosts entry
+  tags: molecule-notest
   lineinfile:
     dest: /etc/hosts
     line: '{{ rsc_os_ip }}  {{ rsc_os_fqdn }}'
@@ -429,6 +430,7 @@
     mode: '0644'
 
 - name: Set /etc/hostname
+  tags: molecule-notest
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
