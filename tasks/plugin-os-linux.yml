@@ -37,7 +37,11 @@
     command: authconfig --enablemkhomedir --update
     when:  ansible_distribution == 'CentOS'
 
-  - name: Update pam to enable enablemkhomedir Fedora
+  - name: Select sssd profile on Rocky/Fedora
+    command: authselect select sssd --force
+    when: ansible_distribution == 'Fedora' or ansible_distribution == 'Rocky'
+
+  - name: Update pam to enable enablemkhomedir Rocky/Fedora
     command: authselect enable-feature with-mkhomedir
     when:  ansible_distribution == 'Fedora' or ansible_distribution == 'Rocky'
 
