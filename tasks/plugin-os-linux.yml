@@ -286,16 +286,18 @@
     regexp: 'auth (.*) pam_securetty.so'
     line: auth optional    pam_securetty.so
 
-# - name: Install fail2ban on Ubuntu
-#   apt:
-#     name: fail2ban
-#   when: ansible_distribution == 'Ubuntu'
-
 - name: Create config file fail2ban on Ubuntu
   copy:
     src: fail2ban-ubuntu
     dest: /etc/fail2ban/jail.local
     mode: 0644
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Start fail2ban on Ubuntu
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
   when: ansible_distribution == 'Ubuntu'
 
 - name: Add /etc/hosts entry
