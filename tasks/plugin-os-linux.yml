@@ -2,6 +2,18 @@
   timezone:
     name: Europe/Amsterdam
 
+- name: Check if /mnt/scratch exists
+  stat:
+    path: /mnt/scratch
+  register: scratch_dir
+
+- name: Copy DATALOSS_WARNING_README.txt to /mnt/scratch if it exists
+  copy:
+    src: DATALOSS_WARNING_README.txt
+    dest: /mnt/scratch/DATALOSS_WARNING_README.txt
+    mode: '0644'
+  when: scratch_dir.stat.exists
+
 - name: CentOS or Fedora or Rocky
   when: ansible_os_family == "RedHat"
   block:
