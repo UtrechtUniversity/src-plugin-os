@@ -1,0 +1,17 @@
+- name: Validate src_ips_list
+  fail:
+    msg: "src_ips_list parameter is required"
+  when: src_ips_list is not defined
+
+- name: Add domains and IPs to hosts file
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item.ip }} {{ item.domain }}"
+    regexp: "^.*\\s{{ item.domain }}\\s*$"
+    state: present
+    backup: yes
+  loop: "{{ src_ips_list }}"
+  when: 
+    - src_ips_list is defined
+    - item.ip is defined
+    - item.domain is defined
