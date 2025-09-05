@@ -2,17 +2,51 @@
   timezone:
     name: Europe/Amsterdam
 
-- name: Check if /mnt/scratch exists
-  stat:
-    path: /mnt/scratch
-  register: scratch_dir
+- name: Check if ephemeral is mounted
+  command: mountpoint -q /mnt/scratch
+  register: ephemeral_check
+  changed_when: false
+  failed_when: false
 
-- name: Copy DATALOSS_WARNING_README.txt to /mnt/scratch if it exists
-  copy:
-    src: DATALOSS_WARNING_README.txt
-    dest: /mnt/scratch/DATALOSS_WARNING_README.txt
-    mode: '0644'
-  when: scratch_dir.stat.exists
+- name: ephemeral scratch setup
+  when: ephemeral_check.rc == 0
+  block:
+
+  - name: Install persistent scratch warning source
+    copy:
+      src: DATALOSS_WARNING_README.txt
+      dest: /usr/local/share/DATALOSS_WARNING_README.txt
+      mode: '0644'
+
+  - name: Create scratch README service
+    copy:
+      dest: /etc/systemd/system/scratch-readme.service
+      mode: "0644"
+      content: |
+        [Unit]
+        Description=Copy DATALOSS_WARNING_README.txt to /mnt/scratch after it is mounted
+        Requires=mnt-scratch.mount
+        After=mnt-scratch.mount
+        ConditionPathIsMountPoint=/mnt/scratch
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/sh -c 'chmod 1777 /mnt/scratch && cp -f /usr/local/share/DATALOSS_WARNING_README.txt /mnt/scratch/DATALOSS_WARNING_README.txt'
+        [Install]
+        WantedBy=mnt-scratch.mount
+
+  - name: Enable scratch-readme service
+    systemd:
+      name: scratch-readme.service
+      enabled: yes
+      state: started
+      daemon_reload: yes
+
+  - name: In skel, symlink to ephemeral scratch when present
+    file:
+      src: /mnt/scratch
+      dest: /etc/skel/scratch
+      state: link
+      force: yes
 
 - name: CentOS or Fedora or Rocky
   when: ansible_os_family == "RedHat"
@@ -21,23 +55,23 @@
   - name: Install epel-release
     package:
       name:
-        - epel-release
+      - epel-release
       state: present
     when: ansible_distribution == 'CentOS' or ansible_distribution == 'Rocky'
 
   - name: Install required packages (1)
     package:
       name:
-        - python3-libselinux
-        - python3
-        - python3-setuptools
-        - python3-pip
-        - jq
-        - curl
-        - ntfs-3g
-        - cronie
-        - oddjob
-        - oddjob-mkhomedir
+      - python3-libselinux
+      - python3
+      - python3-setuptools
+      - python3-pip
+      - jq
+      - curl
+      - ntfs-3g
+      - cronie
+      - oddjob
+      - oddjob-mkhomedir
 
   - name: Set yubikey flag on and keep it persistent across reboots
     seboolean:
@@ -47,7 +81,7 @@
 
   - name: Update pam to enable enablemkhomedir CentOS
     command: authconfig --enablemkhomedir --update
-    when:  ansible_distribution == 'CentOS'
+    when: ansible_distribution == 'CentOS'
 
   - name: Select sssd profile on Rocky/Fedora
     command: authselect select sssd --force
@@ -55,7 +89,7 @@
 
   - name: Update pam to enable enablemkhomedir Rocky/Fedora
     command: authselect enable-feature with-mkhomedir
-    when:  ansible_distribution == 'Fedora' or ansible_distribution == 'Rocky'
+    when: ansible_distribution == 'Fedora' or ansible_distribution == 'Rocky'
 
   - name: Update pam to use pam_group
     lineinfile:
@@ -64,35 +98,34 @@
       regex: 'auth required pam_group.so use_first_pass'
       insertafter: BOF
     with_items:
-        - /etc/pam.d/password-auth
-        - /etc/pam.d/system-auth
+    - /etc/pam.d/password-auth
+    - /etc/pam.d/system-auth
 
   - name: Install fail2ban on CentOS or Fedora
     package:
       name: fail2ban
       # state: latest
 
-  - name: Create config file fail2ban on CentOS 
+  - name: Create config file fail2ban on CentOS
     copy:
       src: fail2ban-centos
       dest: /etc/fail2ban/jail.local
-      mode: 0644
+      mode: '0644'
     when: ansible_distribution == 'CentOS'
 
-  - name: Create config file fail2ban on Rocky 
+  - name: Create config file fail2ban on Rocky
     copy:
       src: fail2ban-rocky
       dest: /etc/fail2ban/jail.local
-      mode: 0644
+      mode: '0644'
     when: ansible_distribution == 'Rocky'
-
 
   - name: Create config file fail2ban on Fedora
     copy:
       src: fail2ban-fedora
       dest: /etc/fail2ban/jail.local
-      mode: 0644
-    when: ansible_distribution == 'Fedora'  
+      mode: '0644'
+    when: ansible_distribution == 'Fedora'
 
   - name: Start fail2ban on CentOS or Fedora
     service:
@@ -105,11 +138,11 @@
       name: "{{ item }}"
       masked: yes
     with_items:
-      - sleep.target
-      - suspend-then-hibernate.target
-      - suspend.target
-      - hibernate.target
-      - hybrid-sleep.target
+    - sleep.target
+    - suspend-then-hibernate.target
+    - suspend.target
+    - hibernate.target
+    - hybrid-sleep.target
 
   - name: Add aliases to notify users
     blockinfile:
@@ -133,13 +166,12 @@
       name: firewalld
       state: stopped
       enabled: false
-    
+
   - name: Start Cron service
     service:
       name: crond
       state: started
       enabled: yes
-
 
 - name: Ubuntu
   when: ansible_os_family == 'Debian'
@@ -156,43 +188,43 @@
       state: started
 
   - name: Wait for APT Lock 1
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for APT Lock-frontend 1
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for /var/lib/apt/lists/lock 1
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for APT /var/cache/apt/archives/lock 1
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Update apt repo and cache
     apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
 
   - name: Wait for APT Lock
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for APT Lock-frontend
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for /var/lib/apt/lists/lock
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Wait for APT /var/cache/apt/archives/lock
-    shell:  x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+    shell: x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
 
   - name: Install required packages (3)
     package:
       name:
-        - apt-transport-https
-        - python3
-        - python3-setuptools
-        - python3-pip
-        - jq
-        - curl
-        - ntfs-3g
-        - fail2ban
+      - apt-transport-https
+      - python3
+      - python3-setuptools
+      - python3-pip
+      - jq
+      - curl
+      - ntfs-3g
+      - fail2ban
       state: present
 
   - name: Create pam entry for mkhomedir
@@ -200,21 +232,21 @@
     copy:
       src: pam-configs/mkhomedir
       dest: /usr/share/pam-configs/mkhomedir
-      mode: 0644
+      mode: '0644'
 
   - name: Update pam when pam_mkhomedir is changed
     when: pam_mkhomedir is changed
     command: pam-auth-update {{ item }}
     with_items:
-      - --remove mkhomedir
-      - --package mkhomedir
+    - --remove mkhomedir
+    - --package mkhomedir
 
   - name: Create pam entry for group membership
     register: pam_group
     copy:
       src: pam-configs/group
       dest: /usr/share/pam-configs/group
-      mode: 0644
+      mode: '0644'
 
   - name: Update pam when pam_group is changes
     when: pam_group is changed
@@ -225,11 +257,11 @@
       name: "{{ item }}"
       masked: yes
     with_items:
-      - sleep.target
-      - suspend-then-hibernate.target
-      - suspend.target
-      - hibernate.target
-      - hybrid-sleep.target
+    - sleep.target
+    - suspend-then-hibernate.target
+    - suspend.target
+    - hibernate.target
+    - hybrid-sleep.target
 
   - name: Add aliases to notify users
     blockinfile:
@@ -246,7 +278,6 @@
       name: cron
       daemon_reload: true
       state: restarted
-
 
 - name: Ensure 'wheel' group exists
   group:
@@ -273,23 +304,24 @@
     dest: /etc/skel/data
     state: link
 
-- name: Create temporary scratch dir
+- name: Create /local-share directory
   file:
-    path: /scratch
-    mode: 0777
+    path: /local-share
+    mode: '0777'
     state: directory
     recurse: yes
 
-- name: Create symlink to scratch dir in skel
+- name: In skel, symlink to local-share
   file:
-    src: /scratch
-    dest: /etc/skel/scratch
+    src: /local-share
+    dest: /etc/skel/local-share
     state: link
+    force: yes
 
 - name: Create .ssh folder in skel
   file:
     path: /etc/skel/.ssh
-    mode: 0700
+    mode: '0700'
     state: directory
 
 - name: Fix securetty
@@ -302,7 +334,7 @@
   copy:
     src: fail2ban-ubuntu
     dest: /etc/fail2ban/jail.local
-    mode: 0644
+    mode: '0644'
   when: ansible_distribution == 'Ubuntu'
 
 - name: Start fail2ban on Ubuntu
@@ -323,4 +355,3 @@
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
-
