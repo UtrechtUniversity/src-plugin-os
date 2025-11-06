@@ -62,5 +62,29 @@ if [ $retry_count -eq $max_retries ]; then
 fi
 
 # Cleanup unused directories
-find "/data" -mindepth 1 -maxdepth 1 -type d ! -name "datasets" -empty -exec sh -c '! mountpoint -q "{}"' \; -delete
+find "/data" \
+    -mindepth 1 \
+    -maxdepth 1 \
+    -type d \
+    ! -name "datasets" \
+    ! -name ".*" \
+    -exec sh -c '
+        for dir do
+            if [ ! -f "$dir/.rsc_managed" ]; then
+                continue  # Skip if not RSC managed
+            fi
 
+            if mountpoint -q "$dir"; then
+                continue  # Skip if directory is a mountpoint
+            fi
+
+            # Check for any entries other than the marker (efficient, returns immediately if any)
+            if [ -n "$(find "$dir" -mindepth 1 -maxdepth 1 ! -name ".rsc_managed" -print -quit 2>/dev/null)" ]; then
+                continue  # Skip if directory has other files
+            fi
+
+            rm -f "$dir/.rsc_managed" && \
+            rmdir "$dir" && \
+            echo "$(date) - Successfully removed empty managed mountpoint $dir" >> '"$log_file"'
+        done
+    ' sh {} +
