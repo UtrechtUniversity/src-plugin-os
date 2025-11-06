@@ -67,6 +67,7 @@ do_mount()
 
     /bin/mkdir -p ${MOUNT_POINT}
     chmod 777 ${MOUNT_POINT}
+    touch "${MOUNT_POINT}/.rsc_managed"
 
     # Global mount options
     OPTS="x-mount.mkdir=777"
