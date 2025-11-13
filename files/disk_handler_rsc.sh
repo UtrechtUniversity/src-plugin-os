@@ -61,9 +61,6 @@ if [ $retry_count -eq $max_retries ]; then
     exit 1
 fi
 
-# Cleanup unused directories
-find "/data" -mindepth 1 -maxdepth 1 -type d ! -name "datasets" -empty -exec sh -c '! mountpoint -q "{}"' \; -delete
-
 # Cleanup only RSC-managed empty directories with extra safety checks
 find "/data" \
     -mindepth 1 \
