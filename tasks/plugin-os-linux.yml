@@ -357,3 +357,6 @@
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
+
+- name: Apply hostname immediately
+  command: hostnamectl hostname {{ rsc_os_fqdn }}
