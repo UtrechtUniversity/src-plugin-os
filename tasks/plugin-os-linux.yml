@@ -324,6 +324,14 @@
     mode: '0700'
     state: directory
 
+- name: Disable SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Restart sshd
+
 - name: Fix securetty
   lineinfile:
     path: /etc/pam.d/login

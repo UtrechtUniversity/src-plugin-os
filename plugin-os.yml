@@ -3,6 +3,12 @@
   become: true
   gather_facts: false
 
+  handlers:
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted
+
   tasks:
     - name: Wait for system to become reachable
       wait_for_connection:
