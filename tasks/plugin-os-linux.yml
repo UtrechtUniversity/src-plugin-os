@@ -72,6 +72,7 @@
       - cronie
       - oddjob
       - oddjob-mkhomedir
+      - xterm
 
   - name: Set yubikey flag on and keep it persistent across reboots
     seboolean:
@@ -225,6 +226,7 @@
       - curl
       - ntfs-3g
       - fail2ban
+      - xterm
       state: present
 
   - name: Create pam entry for mkhomedir
