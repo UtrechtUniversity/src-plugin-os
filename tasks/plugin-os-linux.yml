@@ -354,6 +354,21 @@
     enabled: yes
   when: ansible_distribution == 'Ubuntu'
 
+- name: Check if ephemeral disk is present in metadata
+  ansible.builtin.command: cloud-init query ds.ec2_metadata."block-device-mapping".ephemeral0
+  register: ephemeral_device
+  failed_when: false 
+  changed_when: false 
+  when: ansible_distribution == 'Fedora'
+
+- name: Remove scratch mount if ephemeral disk is missing
+  ansible.posix.mount:
+    path: /mnt/scratch
+    state: absent_from_fstab
+  when:
+    - ansible_distribution == "Fedora"
+    - ephemeral_device.rc != 0 or ephemeral_device.stdout in ['null', '', 'None']
+
 - name: Add /etc/hosts entry
   lineinfile:
     dest: /etc/hosts
