@@ -24,7 +24,7 @@
       register: result
     - name: Disk format mount
       when: result is skipped and (ansible_distribution == 'CentOS' or ansible_distribution == 'Ubuntu' or ansible_distribution == 'Fedora' or ansible_distribution == 'Rocky') and os_disk_format is defined and (os_disk_format | bool)
-      #result.skipped
+      # result.skipped
       include_tasks: tasks/plugin-disk-format-mount.yml
     - name: Add SRC IPs to hosts
       when: add_ips_to_hosts is defined and (add_ips_to_hosts | bool)

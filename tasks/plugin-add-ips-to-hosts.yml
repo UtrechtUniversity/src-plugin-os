@@ -9,9 +9,9 @@
     line: "{{ item.ip }} {{ item.domain }}"
     regexp: "^.*\\s{{ item.domain }}\\s*$"
     state: present
-    backup: yes
+    backup: true
   loop: "{{ src_ips_list }}"
-  when: 
+  when:
     - src_ips_list is defined
     - item.ip is defined
     - item.domain is defined
