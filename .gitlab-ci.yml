@@ -1,0 +1,5 @@
+---
+include:
+  - project: 'rsc-surf-nl/ci-cd-templates'
+    ref: 'main'
+    file: '/ansible-template.yml'
