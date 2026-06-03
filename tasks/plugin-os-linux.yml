@@ -8,7 +8,7 @@
   changed_when: false
   failed_when: false
 
-- name: ephemeral scratch setup
+- name: Ephemeral scratch setup
   when: ephemeral_check.rc == 0
   block:
 
@@ -189,31 +189,82 @@
         state: started
 
     - name: Wait for APT Lock 1
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for APT Lock-frontend 1
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for /var/lib/apt/lists/lock 1
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for APT /var/cache/apt/archives/lock 1
-      shell: x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Update apt repo and cache
-      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+      apt:
+        update_cache: true
+        force_apt_get: true
+        cache_valid_time: 3600
 
     - name: Wait for APT Lock
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for APT Lock-frontend
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for /var/lib/apt/lists/lock
-      shell: x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/lib/apt/lists/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Wait for APT /var/cache/apt/archives/lock
-      shell: x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; x=`expr $x + 1`; done;
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          x=1; while [ $x -le 5 ] | fuser /var/cache/apt/archives/lock >/dev/null 2>&1;
+          do sleep 5; x=`expr $x + 1`; done;
+        executable: /bin/bash
+      changed_when: false
 
     - name: Install required packages (3)
       package:
@@ -375,11 +426,13 @@
     line: '{{ rsc_os_ip }}  {{ rsc_os_fqdn }}'
     insertafter: EOF
     create: true
+    mode: '0644'
 
 - name: Set /etc/hostname
   copy:
     content: "{{ rsc_os_fqdn + '\n' }}"
     dest: /etc/hostname
+    mode: '0644'
 
 - name: Apply hostname immediately
   command: hostnamectl hostname {{ rsc_os_fqdn }}

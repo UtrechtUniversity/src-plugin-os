@@ -72,8 +72,9 @@
         mode: 0644
 
     - name: Trigger udevadm
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: udevadm trigger
+      changed_when: false
 
     - name: Restart rsc-disk-handler service
       ansible.builtin.systemd_service:
