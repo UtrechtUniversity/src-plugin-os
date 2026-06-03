@@ -1,6 +1,6 @@
 - name: Mount disks in Linux
   block:
-    - name: Install gdisk on CentOS 
+    - name: Install gdisk on CentOS
       yum:
         name: gdisk
         state: present
