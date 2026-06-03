@@ -1,5 +1,5 @@
 ---
-profile: min
+profile: safety
 exclude_paths:
   - .venv
   - .git
