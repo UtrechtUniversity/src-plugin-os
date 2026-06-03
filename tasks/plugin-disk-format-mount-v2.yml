@@ -12,7 +12,7 @@
         recurse: true
         state: directory
         mode: 0700
-      
+
     - name: Create /opt/rsc-utilities dir
       ansible.builtin.file:
         path: /opt/rsc-utilities
@@ -80,7 +80,7 @@
         state: restarted
         daemon_reload: true
         name: rsc-disk-handler.service
-   
+
     - name: Enable rsc-disk-handler service
       ansible.builtin.systemd_service:
         name: rsc-disk-handler.service
