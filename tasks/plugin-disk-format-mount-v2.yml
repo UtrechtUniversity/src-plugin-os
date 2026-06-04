@@ -11,19 +11,19 @@
         path: /etc/rsc
         recurse: true
         state: directory
-        mode: 0700
+        mode: "700"
 
     - name: Create /opt/rsc-utilities dir
       ansible.builtin.file:
         path: /opt/rsc-utilities
         recurse: true
         state: directory
-        mode: 0700
+        mode: "700"
 
     - name: Put storage config
       ansible.builtin.copy:
         dest: /etc/rsc/storage.json
-        mode: 0600
+        mode: "600"
         content: |
           {
             "workspace_id": "{{ workspace_id }}",
@@ -36,40 +36,40 @@
       ansible.builtin.copy:
         src: disk_handler_rsc.sh
         dest: /opt/rsc-utilities/disk_handler_rsc.sh
-        mode: 0755
+        mode: "755"
       when: cloud_type == 'OpenStack'
 
     - name: Copy azure_disk_handler_rsc.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
         src: azure_disk_handler_rsc.sh
         dest: /opt/rsc-utilities/disk_handler_rsc.sh
-        mode: 0755
+        mode: "755"
       when: cloud_type == 'Azure'
 
     - name: Copy aws_disk_handler_rsc.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
         src: aws_disk_handler_rsc.sh
         dest: /opt/rsc-utilities/disk_handler_rsc.sh
-        mode: 0755
+        mode: "755"
       when: cloud_type == 'AWS'
 
     - name: Copy format_rsc_disk.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
         src: format_rsc_disk.sh
         dest: /opt/rsc-utilities/format_rsc_disk.sh
-        mode: 0755
+        mode: "755"
 
     - name: Copy automount_rsc_disk.sh to /opt/rsc-utilities/
       ansible.builtin.copy:
         src: automount_rsc_disk.sh
         dest: /opt/rsc-utilities/automount_rsc_disk.sh
-        mode: 0755
+        mode: "755"
 
     - name: Copy rsc-disk-handler.service to the systemd units directory
       ansible.builtin.copy:
         src: rsc-disk-handler.service
         dest: /etc/systemd/system/rsc-disk-handler.service
-        mode: 0644
+        mode: "644"
 
     - name: Trigger udevadm
       ansible.builtin.command:

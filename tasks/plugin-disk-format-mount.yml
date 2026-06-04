@@ -103,7 +103,7 @@
     - name: Change permissions
       file:
         path: "/data/volume_{{ item.0 }}"
-        mode: 0777
+        mode: "777"
         recurse: false
         state: directory
       when: (mount_info | join('|')) is not search(item.1.name)
