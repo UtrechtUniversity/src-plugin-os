@@ -5,3 +5,4 @@ check:
 	.venv/bin/pip install -r requirements-dev.txt
 	.venv/bin/yamllint -c .yamllint.yml .
 	.venv/bin/ansible-lint
+	.venv/bin/ansible-playbook --syntax-check $(wildcard *.yml)
