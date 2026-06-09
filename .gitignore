@@ -1,3 +1,6 @@
 .venv/
+.uv/
+.uv-bin/
+
 .ansible/
 .cache/

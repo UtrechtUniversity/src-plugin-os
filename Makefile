@@ -1,9 +1,8 @@
-.DEFAULT_GOAL := check
+.DEFAULT_GOAL := lint
 
-check:
-	python3 -m venv --clear .venv
-	.venv/bin/pip install -r requirements-dev.txt
-	.venv/bin/yamllint -c .yamllint.yml .
-	.venv/bin/detect-secrets scan --all-files --baseline .secrets.baseline
-	.venv/bin/ansible-lint
-	.venv/bin/ansible-playbook --syntax-check $(wildcard *.yml)
+lint:
+	uv sync --group dev
+	uv run yamllint -c .yamllint.yml .
+	uv run ansible-lint
+	uv run detect-secrets scan --all-files --baseline .secrets.baseline
+	uv run ansible-playbook --syntax-check $(wildcard *.yml)
