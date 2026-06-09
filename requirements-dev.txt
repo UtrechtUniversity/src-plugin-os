@@ -1,7 +1,0 @@
-# Lint toolchain for local `make lint` and GitLab CI (.gitlab-ci.yml).
-# Python 3.10+ required (CI uses 3.12).
-# ansible-lint 25.x is required for ansible-core 2.18+ (24.x breaks on 2.19).
-ansible-core>=2.16,<2.20
-ansible-lint>=25.12,<26
-yamllint>=1.35.1,<2
-detect-secrets>=1.5,<2
