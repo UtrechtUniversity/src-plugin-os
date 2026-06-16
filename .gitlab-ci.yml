@@ -1,5 +1,3 @@
 ---
 include:
-  - project: rsc-surf-nl/ci-cd-templates
-    ref: main
-    file: /plugin-template.yml
+  - component: gitlab.com/rsc-surf-nl/ci-cd-templates/rsc-plugin-release@main
