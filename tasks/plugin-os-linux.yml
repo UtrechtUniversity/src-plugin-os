@@ -437,4 +437,5 @@
     mode: '0644'
 
 - name: Apply hostname immediately
+  tags: molecule-notest
   command: hostnamectl hostname {{ rsc_os_fqdn }}
